@@ -1,0 +1,14 @@
+textarea{
+    resize: none;
+}
+.noPad{
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+.btn1{
+    width: 100%;
+}
+.btn-c-1{
+    background-color:darkcyan
+}
