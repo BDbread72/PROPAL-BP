@@ -54,6 +54,13 @@ const _instanceChatCondition = {
   second:true
 }
 
+/**@type {chatParamBranch} */
+const _branchBase = {
+  after:"runCommand",
+  afterValue: "",
+  paramValue: ""
+}
+
 /**@type {HTMLDivElement} */
 const workspace = document.getElementById('workSpace')
 
@@ -267,6 +274,290 @@ class chatEvent{
       })
       conditionsArticle.append(addCondtionButton)
 
+      const paramsArticle = document.createElement('article')
+      const paramsHeader = document.createElement('header')
+      paramsHeader.textContent = 'PARAMS'
+      paramsArticle.append(paramsHeader)
+      let paramIndex=0;
+      for(const pm of d.params){
+        const paramArt = document.createElement('article')
+        const paramIsEssentialLabel = document.createElement('label')
+        paramIsEssentialLabel.textContent = 'Is Essential'
+        const paramIsEssential = document.createElement('input')
+        paramIsEssential.type = 'checkbox'
+        paramIsEssential.checked = pm.essential
+        paramIsEssential.setAttribute('index',index)
+        paramIsEssential.setAttribute('pindex',paramIndex)
+        paramIsEssential.style.marginLeft='6px'
+        paramIsEssential.addEventListener('click',()=>{
+          this.data[Number(paramIsEssential.getAttribute('index'))].params[Number(paramIsEssential.getAttribute('pindex'))].essential = paramIsEssential.checked;
+          this.updateTextOnly()
+        })
+        const div = document.createElement('div')
+        div.style.display='flex'
+        div.append(paramIsEssentialLabel,paramIsEssential)
+
+        const paramTypeLabel = document.createElement('label')
+        paramTypeLabel.textContent = 'Param Type'
+        const paramTypesArr = ['Boolean','Number','String']
+        const paramTypeSel = document.createElement('select')
+        for(const t of paramTypesArr){
+          const paramTypeOpt = document.createElement('option')
+          paramTypeOpt.value = t.charAt(0).toUpperCase() + t.slice(1,t.length)
+          paramTypeOpt.text = t.charAt(0).toUpperCase() + t.slice(1,t.length)
+          paramTypeSel.appendChild(paramTypeOpt)
+        }
+        paramTypeSel.setAttribute('index',index)
+        paramTypeSel.setAttribute('pindex',paramIndex)
+        paramTypeSel.onchange = ()=>{this.data[Number(paramTypeSel.getAttribute('index'))].params[Number(paramTypeSel.getAttribute('pindex'))].type = paramTypeSel.value.toLowerCase();this.updateTextOnly()}
+
+        const paramNameLabel = document.createElement('label')
+        paramNameLabel.textContent = "Name of Param"
+        const paramNameInput = document.createElement('input')
+        paramNameInput.setAttribute('index',index)
+        paramNameInput.setAttribute('pindex',paramIndex)
+        paramNameInput.value = pm.name
+        paramNameInput.addEventListener('change',()=>{
+          this.data[Number(paramNameInput.getAttribute('index'))].params[Number(paramNameInput.getAttribute('pindex'))].name = paramNameInput.value
+          this.updateTextOnly()
+        })
+
+        const paramDescLabel = document.createElement('label')
+        paramDescLabel.textContent = "Description of Param"
+        const paramDescInput = document.createElement('input')
+        paramDescInput.setAttribute('index',index)
+        paramDescInput.setAttribute('pindex',paramIndex)
+        paramDescInput.value = pm.name
+        paramDescInput.addEventListener('change',()=>{
+          this.data[Number(paramDescInput.getAttribute('index'))].params[Number(paramDescInput.getAttribute('pindex'))].desc = paramDescInput.value
+          this.updateTextOnly()
+        })
+
+        const paramDelete = document.createElement('button')
+        paramDelete.setAttribute('index',index)
+        paramDelete.setAttribute('pindex',paramIndex)
+        paramDelete.textContent = 'Delete Param'
+        paramDelete.style.width = '100%'
+        paramDelete.style.backgroundColor = `#f00`
+        paramDelete.style.borderColor = `#f00`
+        paramDelete.style.color = `#fff`
+        paramDelete.addEventListener('click',()=>{
+          this.data[Number(paramDelete.getAttribute('index'))].params.splice(Number(paramDelete.getAttribute('pindex')),1)
+          this.update()
+        })
+        paramArt.append(div,paramTypeLabel,paramTypeSel,paramNameLabel,paramNameInput,paramDescLabel,paramDescInput,paramDelete)
+        paramsArticle.appendChild(paramArt)
+      }
+      const paramAdderBtn = document.createElement('button')
+      paramAdderBtn.innerText = "ADD PARAM"
+      paramAdderBtn.setAttribute('index',index)
+      paramAdderBtn.style.width = '100%'
+      paramAdderBtn.onclick = ()=>{
+        this.data[Number(paramAdderBtn.getAttribute('index'))].params.push({essential:true,name:"",desc:"",type:"string"})
+        this.update()
+      }
+      paramsArticle.append(paramAdderBtn)
+
+      const parambranchArticle = document.createElement('article')
+      const paramBranchHeader = document.createElement('header')
+      paramBranchHeader.innerText = `PARAM BRANCHES`
+      parambranchArticle.append(paramBranchHeader)
+      const paramTypeArr = ['string','number','boolean']
+      /**@param {chatParamBranch[]} paramBranches @param {Number[]} branchArr @param {chatEvent} owner   */
+      function returnPBArticle(paramBranches, branchArr,owner){
+        let pbIndex = 0;
+        /**@type {HTMLElement[]} */
+        let articleArr = []
+        for(const pb of paramBranches){
+          /**@type {Number[]} */
+          let barr = JSON.parse(JSON.stringify(branchArr))
+          barr.push(pbIndex)
+          const article = document.createElement('article')
+          const paramTypeLabel = document.createElement('label')
+          paramTypeLabel.textContent = 'Param Type'
+          const paramTypeSelect = document.createElement('select')
+          for(const pt of paramTypeArr){
+            const paramTypeOpt = document.createElement('option')
+            paramTypeOpt.value = pt
+            paramTypeOpt.text = pt
+            paramTypeSelect.appendChild(paramTypeOpt)
+          }
+          paramTypeSelect.value = typeof pb.paramValue
+          paramTypeSelect.setAttribute('index',index)
+          paramTypeSelect.setAttribute('pindex',JSON.stringify(barr))
+          paramTypeSelect.addEventListener('change',()=>{
+            /**@type {Number[]} */
+            let pindex = JSON.parse(paramTypeSelect.getAttribute('pindex'))
+            const tindex = Number(paramTypeSelect.getAttribute('index'))
+            let __ = owner.data[tindex].paramBranches
+            let _i = 0;
+            for(const i of pindex){
+              _i++;
+              __ = __[i]
+              if(pindex.length != _i) __ = __.afterValue
+            }
+            if(paramTypeSelect.value == "string"){
+              __.paramValue = ""
+            }else if(paramTypeSelect.value == "number"){
+              __.paramValue = 0
+            }else if(paramTypeSelect.value == "boolean"){
+              __.paramValue = false
+            }
+            owner.update()
+          })
+          const paramValueLabel = document.createElement('label')
+          paramValueLabel.textContent = 'Param Value'
+          const paramValueInput = document.createElement('input')
+          if(typeof pb.paramValue == "string"){
+            // paramValueInput.type
+            paramValueInput.value = pb.paramValue
+          }else if(typeof pb.paramValue == "number"){
+            paramValueInput.type = 'number'
+            paramValueInput.value = pb.paramValue
+          }else{
+            paramValueInput.type = 'checkbox'
+            paramValueInput.style.width = '100%'
+            paramValueInput.checked = pb.paramValue
+          }
+          paramValueInput.style.height = '3.5rem'
+          paramValueInput.setAttribute('index',index)
+          paramValueInput.setAttribute('pindex',JSON.stringify(barr))
+          paramValueInput.addEventListener('change',()=>{
+            /**@type {Number[]} */
+            let pindex = JSON.parse(paramValueInput.getAttribute('pindex'))
+            const tindex = Number(paramValueInput.getAttribute('index'))
+            let __ = owner.data[tindex].paramBranches
+            let _i = 0;
+            for(const i of pindex){
+              _i++;
+              __ = __[i]
+              if(pindex.length != _i) __ = __.afterValue
+            }
+            if(typeof pb.paramValue == "string"){
+              __.paramValue = paramValueInput.value
+            }else if(typeof pb.paramValue == "number"){
+              __.paramValue = Number(paramValueInput.value)
+            }else{
+              __.paramValue = paramValueInput.checked
+            }
+            owner.updateTextOnly()
+          })
+
+          const afterValueTypeLabel = document.createElement('label')
+          afterValueTypeLabel.textContent = 'After Value Type'
+          const afterValueTypeSelect = document.createElement('select')
+          const afterValueTypeArr = ["string","param branch"]
+          for(const __a of afterValueTypeArr){
+            const __opt = document.createElement('option')
+            __opt.value = __a
+            __opt.textContent = __a
+            afterValueTypeSelect.append(__opt)
+          }
+          afterValueTypeSelect.setAttribute('index',index)
+          afterValueTypeSelect.setAttribute('pindex',JSON.stringify(barr))
+          afterValueTypeSelect.addEventListener('change',()=>{
+            /**@type {Number[]} */
+            let pindex = JSON.parse(afterValueTypeSelect.getAttribute('pindex'))
+            const tindex = Number(afterValueTypeSelect.getAttribute('index'))
+            let __ = owner.data[tindex].paramBranches
+            let _i = 0;
+            for(const i of pindex){
+              _i++;
+              __ = __[i]
+              if(pindex.length != _i) __ = __.afterValue
+            }
+            if(afterValueTypeSelect.value == afterValueTypeArr[0]){__.afterValue = ""}
+            else{__.afterValue = []}
+            owner.update()
+          })
+          if(typeof pb.afterValue == "string"){afterValueTypeSelect.value = afterValueTypeArr[0]}
+          else {afterValueTypeSelect.value = afterValueTypeArr[1]}
+  
+          article.append(paramTypeLabel,paramTypeSelect,paramValueLabel,paramValueInput,afterValueTypeLabel,afterValueTypeSelect)
+          if(typeof pb.afterValue == "string"){
+            //? string input
+            const afterValueInput = document.createElement('input')
+            afterValueInput.setAttribute('index',index)
+            afterValueInput.setAttribute('pindex',JSON.stringify(barr))
+            afterValueInput.value = pb.afterValue
+            afterValueInput.addEventListener('change',()=>{
+              /**@type {Number[]} */
+              let pindex = JSON.parse(afterValueInput.getAttribute('pindex'))
+              const tindex = Number(afterValueInput.getAttribute('index'))
+              let __ = owner.data[tindex].paramBranches
+              let _i = 0;
+              for(const i of pindex){
+                _i++;
+                __ = __[i]
+                if(pindex.length != _i) __ = __.afterValue
+              }
+              __.afterValue = afterValueTypeInput.value
+            })
+            article.append(afterValueInput)
+          }else{
+            //? branches
+            const pbArticle = document.createElement('article')
+            const header = document.createElement('header')
+            header.textContent = 'Param Branches'
+            pbArticle.append(header)
+            let __b = JSON.parse(JSON.stringify(branchArr))
+            __b.push(pbIndex)
+            for(const i of returnPBArticle(pb.afterValue,__b,owner)){
+              pbArticle.append(i)
+            }
+            const pbAdder = document.createElement('button')
+            pbAdder.textContent = "ADD PARAM BRANCH"
+            pbAdder.style.width = '100%'
+            pbAdder.setAttribute('index',index)
+            pbAdder.setAttribute('pindex',JSON.stringify(barr))
+            pbAdder.addEventListener('click',()=>{
+              let pindex = JSON.parse(pbAdder.getAttribute('pindex'))
+              const tindex = Number(pbAdder.getAttribute('index'))
+              let __ = owner.data[tindex].paramBranches
+              let _i = 0;
+              for(const i of pindex){
+                _i++;
+                __ = __[i]
+                if(pindex.length != _i) __ = __.afterValue
+              }
+              __.afterValue.push(JSON.parse(JSON.stringify(_branchBase)))
+              owner.update()
+            })
+
+            pbArticle.append(pbAdder)
+            article.append(pbArticle)
+          }
+          const deleteParamBranch = document.createElement('button')
+          deleteParamBranch.innerText = 'Delete Param Branch'
+          deleteParamBranch.style.backgroundColor = '#f00'
+          deleteParamBranch.style.borderColor = '#f00'
+          deleteParamBranch.style.width = '100%'
+          deleteParamBranch.setAttribute('index',index)
+          deleteParamBranch.setAttribute('pindex',JSON.stringify(barr))
+          deleteParamBranch.addEventListener('click',()=>{
+            owner.data[Number(deleteParamBranch.getAttribute('index'))].paramBranches.splice(Number(deleteParamBranch.getAttribute('pindex')),1)
+            owner.update()
+          })
+          article.appendChild(deleteParamBranch)
+          articleArr.push(article)
+          pbIndex++;
+        }
+        return articleArr
+      }
+      for(const a of returnPBArticle(d.paramBranches,[],this)){
+        parambranchArticle.appendChild(a)
+      }
+      
+      const paramBranchAdder = document.createElement('button')
+      paramBranchAdder.style.width = '100%'
+      paramBranchAdder.innerText = 'Add Param Branch'
+      paramBranchAdder.setAttribute('index',index)
+      paramBranchAdder.addEventListener('click',()=>{
+        this.data[Number(paramBranchAdder.getAttribute('index'))].paramBranches.push(JSON.parse(JSON.stringify(_branchBase)))
+        this.update();
+      })
+      parambranchArticle.appendChild(paramBranchAdder)
+
 
       //! DEL
       const deleteButton = document.createElement('button')
@@ -277,7 +568,7 @@ class chatEvent{
       deleteButton.style.color = '#fff'
       deleteButton.setAttribute('index',index)
       deleteButton.addEventListener('click',()=>{this.openDeleteEventModal(deleteButton.getAttribute('index'))})
-      chatEvent.append(label1,startsWithInput,label2,typeSelection,div1,conditionsArticle)
+      chatEvent.append(label1,startsWithInput,label2,typeSelection,div1,conditionsArticle,paramsArticle,parambranchArticle)
       chatEvent.append(interfaceMessagesArticle,deleteButton)
       workspace.appendChild(chatEvent)
       index++;
