@@ -491,7 +491,8 @@ class chatEvent{
                 __ = __[i]
                 if(pindex.length != _i) __ = __.afterValue
               }
-              __.afterValue = afterValueTypeInput.value
+              __.afterValue = afterValueInput.value
+              owner.updateTextOnly
             })
             article.append(afterValueInput)
           }else{
